@@ -147,7 +147,7 @@ echo "Firewall aplicado. Regras salvas em $RULES_FILE"
 ### 3.1 INPUT
 - **Função:** controla o tráfego destinado ao próprio firewall.
 - **Regras:** política `DROP`; aceita loopback e respostas de conexões já estabelecidas; aceita SSH somente da rede de Administração (`192.168.1.0/24`) pela interface `eth1`. Qualquer outro SSH é descartado.
-- **Evidência:** testes 1 a 5 (Figura 5). O contador das regras aparece na Figura 3.
+- **Evidência:** testes 1 a 5 (Figura 5). O contador das regras aparece na Figura 7.
 
 ### 3.2 FORWARD
 - **Função:** controla o tráfego entre as redes internas e para a Internet.
