@@ -147,17 +147,17 @@ echo "Firewall aplicado. Regras salvas em $RULES_FILE"
 ### 3.1 INPUT
 - **Função:** controla o tráfego destinado ao próprio firewall.
 - **Regras:** política `DROP`; aceita loopback e respostas de conexões já estabelecidas; aceita SSH somente da rede de Administração (`192.168.1.0/24`) pela interface `eth1`. Qualquer outro SSH é descartado.
-- **Evidência:** testes 1 a 5 (Figura 1). O contador das regras aparece na Figura 3.
+- **Evidência:** testes 1 a 5 (Figura 5). O contador das regras aparece na Figura 3.
 
 ### 3.2 FORWARD
 - **Função:** controla o tráfego entre as redes internas e para a Internet.
 - **Regras:** política `DROP`; bloqueio explícito Produção ↔ Expedição por interface, nos dois sentidos; Administração → Datacenter liberada; Produção → `10.0.0.10:3306`; Expedição → `10.0.0.30:8080`; Administração → Internet apenas em 80/443 (e DNS); Internet → `10.0.0.20:443` somente se o pacote passou pelo DNAT (`--ctstate DNAT`).
-- **Evidência:** testes 6 a 21 (Figura 1).
+- **Evidência:** testes 6 a 21 (Figura 5).
 
 ### 3.3 OUTPUT
 - **Função:** controla o tráfego originado no próprio firewall.
 - **Regras:** aceita loopback, respostas de conexões estabelecidas, DNS/NTP e HTTP/HTTPS para a Internet, e ping. Todo o resto é descartado pela regra final `OUTPUT -j DROP`. Assim, o firewall não inicia conexões para Produção, Expedição ou Datacenter.
-- **Evidência:** testes 33 a 36 (Figura 1).
+- **Evidência:** testes 33 a 36 (Figura 5).
 
 ### 3.4 SNAT
 - **Função:** mascara a origem do tráfego interno que sai para a Internet.
@@ -191,13 +191,49 @@ Cada teste abre uma conexão TCP de um host de origem para um IP e uma porta de 
 
 **36 testes executados, 36 aprovados, 0 falhas.** Cada linha compara o resultado esperado (`OK` ou `BLOQ`) com o obtido.
 
-![Figura 1: testes de conectividade (36/36 aprovados)](lab/evidencias/01-testes.png)
+![Figura 5: testes de conectividade (36/36 aprovados)](lab/evidencias/01-testes.png)
 
-*Figura 1: testes de conectividade (36/36 aprovados).*
+*Figura 5: testes de conectividade (36/36 aprovados).*
 
-### 4.3 Testes por requisito
+### 4.3 Testes do enunciado (comandos reais)
 
-| ID | Requisito | Origem → Destino | Esperado | Obtido | Linha na Fig. 1 |
+Os quatro testes pedidos no enunciado foram executados com as ferramentas reais, com o firewall ativo. No laboratório, o firewall roda um `sshd` (usuário `admin`, autenticação por chave) e o servidor Web `10.0.0.20` responde HTTPS com certificado autoassinado. Por isso o `curl` usa `-k`.
+
+**Teste 1: SSH da Administração para o firewall (deve funcionar)**
+
+`ssh admin@192.168.0.1` a partir da Administração (`192.168.1.10`). O mesmo comando a partir da Produção expira.
+
+![Teste 1: SSH Administração → Firewall](lab/evidencias/07-teste1-ssh.png)
+
+*Figura 1: a Administração entra no firewall e o servidor vê a origem `192.168.1.10`. A Produção recebe `Connection timed out`.*
+
+**Teste 2: ping Produção → Expedição (deve bloquear)**
+
+`ping 192.168.3.1` (interface do firewall na Expedição) e `ping 192.168.3.10` (host da Expedição), a partir da Produção (`192.168.2.10`).
+
+![Teste 2: ping Produção → Expedição](lab/evidencias/08-teste2-ping.png)
+
+*Figura 2: `4 packets transmitted, 0 received, 100% packet loss` nos dois destinos.*
+
+**Teste 3: telnet Produção → Banco de Dados na porta 3306 (deve funcionar)**
+
+`telnet 10.0.0.10 3306` a partir da Produção. Para comparação, a porta 22 do mesmo servidor.
+
+![Teste 3: telnet Produção → banco de dados](lab/evidencias/09-teste3-telnet.png)
+
+*Figura 3: conexão estabelecida na porta 3306 (`Connected to 10.0.0.10`, origem `192.168.2.10`). A porta 22 não responde (código de saída 124 do `timeout`).*
+
+**Teste 4: acesso externo ao servidor Web na porta 443 (deve funcionar)**
+
+`curl -k -i https://203.0.113.50:443` a partir da Internet (`203.0.113.1`). Para comparação, `curl http://203.0.113.50:80`.
+
+![Teste 4: curl Internet → servidor Web via DNAT](lab/evidencias/10-teste4-curl.png)
+
+*Figura 4: `HTTP/1.0 200 OK` respondido pelo servidor interno `10.0.0.20:443`, acessado pelo IP público. A porta 80 expira (`Connection timed out`).*
+
+### 4.4 Testes por requisito
+
+| ID | Requisito | Origem → Destino | Esperado | Obtido | Linha na Fig. 5 |
 |---|---|---|---|---|---|
 | T1 | SSH ao firewall só da Administração | Admin → `192.168.0.1:22` | Aberta | Aberta | 1 |
 | T1b | SSH de outras redes bloqueado | Produção, Expedição, DC, Internet → firewall:22 | Bloqueada | Bloqueada | 2 a 5 |
@@ -213,27 +249,27 @@ Cada teste abre uma conexão TCP de um host de origem para um IP e uma porta de 
 | T7 | Admin ↔ Datacenter total | Admin → DC (22, 80, 443, 3306, 8080) e DC → Admin | Aberta | Aberta | 6 a 11 |
 | T8 | OUTPUT do firewall | Firewall → Internet 443 (aberta); → Internet 22, DC, Produção (bloqueadas) | Conforme regra | Conforme regra | 33 a 36 |
 
-### 4.4 Regras ativas
+### 4.5 Regras ativas
 
-![Figura 2: regras ativas (iptables -S e iptables -t nat -S)](lab/evidencias/03-regras.png)
+![Figura 6: regras ativas (iptables -S e iptables -t nat -S)](lab/evidencias/03-regras.png)
 
-*Figura 2: regras ativas no firewall, tabelas filter e nat.*
+*Figura 6: regras ativas no firewall, tabelas filter e nat.*
 
-### 4.5 Contadores de pacotes
+### 4.6 Contadores de pacotes
 
 Os contadores mostram quantos pacotes cada regra processou durante os testes. Regras de `DROP` com contador maior que zero provam que o bloqueio foi feito por elas.
 
-![Figura 3: contadores de pacotes por regra](lab/evidencias/04-contadores.png)
+![Figura 7: contadores de pacotes por regra](lab/evidencias/04-contadores.png)
 
-*Figura 3: contadores de pacotes e bytes por regra.*
+*Figura 7: contadores de pacotes e bytes por regra.*
 
-### 4.6 Controle sem firewall
+### 4.7 Controle sem firewall
 
-Para provar que os bloqueios vêm das regras, os mesmos acessos foram repetidos com as regras apagadas e as políticas em `ACCEPT`. Todos passaram a funcionar, inclusive Produção → SSH do datacenter, Produção → Expedição e Internet → banco de dados.
+Para provar que os bloqueios vêm das regras, os mesmos acessos foram repetidos com as regras apagadas e as políticas em `ACCEPT`. Todos passaram a funcionar (o SSH da Produção ao datacenter aparece como `RECUSADA`, pois o serviço de teste na porta 22 já foi encerrado, mas o pacote chega ao host), incluindo Produção → Expedição e Internet → banco de dados.
 
-![Figura 4: mesmos acessos sem firewall](lab/evidencias/06-controle.png)
+![Figura 8: mesmos acessos sem firewall](lab/evidencias/06-controle.png)
 
-*Figura 4: controle sem firewall.*
+*Figura 8: controle sem firewall.*
 
 ---
 
