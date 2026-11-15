@@ -1,0 +1,46 @@
+Nº Teste                                            Esper Obtid Resultado [detalhe]
+--- INPUT (tráfego para o firewall) ---
+ 1 SSH Admin -> Firewall 192.168.0.1:22             OK    OK    PASS [ABERTA OK 0.0.0.0:22 origem=192.168.1.10]
+ 2 SSH Produção -> Firewall                         BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+ 3 SSH Expedição -> Firewall                        BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+ 4 SSH Datacenter -> Firewall                       BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+ 5 SSH Internet -> Firewall (203.0.113.50)          BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- FORWARD: Administração <-> Datacenter ---
+ 6 Admin -> DC SSH 10.0.0.10:22                     OK    OK    PASS [ABERTA OK 10.0.0.10:22 origem=192.168.1.10]
+ 7 Admin -> DC HTTP 10.0.0.10:80                    OK    OK    PASS [ABERTA OK 10.0.0.10:80 origem=192.168.1.10]
+ 8 Admin -> DC HTTPS 10.0.0.10:443                  OK    OK    PASS [ABERTA OK 10.0.0.10:443 origem=192.168.1.10]
+ 9 Admin -> DC MySQL 10.0.0.10:3306                 OK    OK    PASS [ABERTA OK 10.0.0.10:3306 origem=192.168.1.10]
+10 Admin -> DC ERP 10.0.0.30:8080                   OK    OK    PASS [ABERTA OK 10.0.0.30:8080 origem=192.168.1.10]
+11 DC -> Admin 192.168.1.10:8080 (sentido inverso)  OK    OK    PASS [ABERTA OK 192.168.1.10:8080 origem=10.0.0.10]
+--- FORWARD: Produção -> Datacenter (só 3306 no BD) ---
+12 Produção -> DC MySQL 10.0.0.10:3306              OK    OK    PASS [ABERTA OK 10.0.0.10:3306 origem=192.168.2.10]
+13 Produção -> DC SSH 10.0.0.10:22                  BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+14 Produção -> DC HTTPS 10.0.0.10:443               BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+15 Produção -> DC ERP 10.0.0.30:8080                BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+16 Produção -> 3306 em outro servidor (.30)         BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- FORWARD: Expedição -> Datacenter (só 8080 no ERP) ---
+17 Expedição -> DC ERP 10.0.0.30:8080               OK    OK    PASS [ABERTA OK 10.0.0.30:8080 origem=192.168.3.10]
+18 Expedição -> DC MySQL 10.0.0.10:3306             BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+19 Expedição -> DC SSH 10.0.0.10:22                 BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- FORWARD: Produção <-> Expedição (bloqueado) ---
+20 Produção -> Expedição 192.168.3.10:8080          BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+21 Expedição -> Produção 192.168.2.10:3306          BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- SNAT / saída para Internet (só Administração, 80/443) ---
+22 Admin -> Internet HTTP :80                       OK    OK    PASS [ABERTA OK 198.51.100.10:80 origem=203.0.113.50]
+23 Admin -> Internet HTTPS :443                     OK    OK    PASS [ABERTA OK 198.51.100.10:443 origem=203.0.113.50]
+24 Admin -> Internet SSH :22                        BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+25 Produção -> Internet :80                         BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+26 Expedição -> Internet :80                        BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+27 Datacenter -> Internet :443                      BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- DNAT (Internet -> Servidor Web, só 443) ---
+28 Internet -> 203.0.113.50:443 (DNAT)              OK    OK    PASS [ABERTA OK 10.0.0.20:443 origem=203.0.113.1]
+29 Internet -> 203.0.113.50:80                      BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+30 Internet -> 203.0.113.50:3306                    BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+31 Internet -> 10.0.0.20:443 direto (sem DNAT)      BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+32 Internet -> 10.0.0.10:3306 direto                BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+--- OUTPUT (tráfego originado no firewall) ---
+33 Firewall -> Internet HTTPS :443                  OK    OK    PASS [ABERTA OK 198.51.100.10:443 origem=203.0.113.50]
+34 Firewall -> Internet SSH :22                     BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+35 Firewall -> DC MySQL 10.0.0.10:3306              BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+36 Firewall -> Produção :3306                       BLOQ  BLOQ  PASS [BLOQUEADA (timeout)]
+TOTAL: 36 testes | PASS=36 | FALHOU=0

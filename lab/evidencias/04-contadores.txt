@@ -1,0 +1,46 @@
+Chain INPUT (policy DROP 4 packets, 240 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     0    --  lo     *       0.0.0.0/0            0.0.0.0/0           
+2        7   413 ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        0     0 DROP       0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+4        1    60 ACCEPT     6    --  eth-adm *       192.168.1.0/24       0.0.0.0/0            tcp dpt:22 ctstate NEW
+5        0     0 ACCEPT     1    --  *      *       192.168.1.0/24       0.0.0.0/0            icmptype 8
+6        8   480 DROP       6    --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy DROP 24 packets, 1440 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1       77  4508 ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+2        0     0 DROP       0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+3        2   120 DROP       0    --  eth-prd eth-exp  0.0.0.0/0            0.0.0.0/0           
+4        2   120 DROP       0    --  eth-exp eth-prd  0.0.0.0/0            0.0.0.0/0           
+5        5   300 ACCEPT     0    --  *      *       192.168.1.0/24       10.0.0.0/24         
+6        1    60 ACCEPT     0    --  *      *       10.0.0.0/24          192.168.1.0/24       ctstate NEW
+7        1    60 ACCEPT     6    --  *      *       192.168.2.0/24       10.0.0.10            tcp dpt:3306 ctstate NEW
+8        1    60 ACCEPT     6    --  *      *       192.168.3.0/24       10.0.0.30            tcp dpt:8080 ctstate NEW
+9        2   120 ACCEPT     6    --  *      eth-wan  192.168.1.0/24       0.0.0.0/0            multiport dports 80,443 ctstate NEW
+10       0     0 ACCEPT     17   --  *      eth-wan  192.168.1.0/24       0.0.0.0/0            udp dpt:53
+11       0     0 ACCEPT     6    --  *      eth-wan  192.168.1.0/24       0.0.0.0/0            tcp dpt:53
+12       1    60 ACCEPT     6    --  eth-wan eth-dc  0.0.0.0/0            10.0.0.20            tcp dpt:443 ctstate DNAT
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     0    --  *      lo      0.0.0.0/0            0.0.0.0/0           
+2        7   406 ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        0     0 ACCEPT     17   --  *      eth-wan  0.0.0.0/0            0.0.0.0/0            multiport dports 53,123
+4        1    60 ACCEPT     6    --  *      eth-wan  0.0.0.0/0            0.0.0.0/0            multiport dports 53,80,443
+5        0     0 ACCEPT     1    --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+6        6   360 DROP       0    --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        1    60 DNAT       6    --  eth-wan *       0.0.0.0/0            203.0.113.50         tcp dpt:443 to:10.0.0.20:443
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        2   120 SNAT       0    --  *      eth-wan  192.168.1.0/24       0.0.0.0/0            to:203.0.113.50

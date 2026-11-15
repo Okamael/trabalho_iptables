@@ -1,0 +1,6 @@
+# CONTROLE: mesmo teste SEM firewall (políticas ACCEPT, regras limpas) - os bloqueios devem sumir
+prd   -> 10.0.0.10      :22    => ABERTA OK 10.0.0.10:22 origem=192.168.2.10
+prd   -> 192.168.3.10   :8080  => ABERTA OK 192.168.3.10:8080 origem=192.168.2.10
+exp   -> 10.0.0.10      :3306  => ABERTA OK 10.0.0.10:3306 origem=192.168.3.10
+inet  -> 10.0.0.10      :3306  => ABERTA OK 10.0.0.10:3306 origem=203.0.113.1
+prd   -> 192.168.0.1    :22    => ABERTA OK 0.0.0.0:22 origem=192.168.2.10

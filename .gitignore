@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# Arquivos intermediários das evidências (os PNG e TXT são mantidos)
+lab/evidencias/*.svg
+lab/evidencias/*.svg.png
+
+# Artefatos do Kiro
+.agents/
+.worktrees/
