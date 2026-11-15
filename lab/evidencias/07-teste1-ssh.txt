@@ -1,0 +1,7 @@
+$ ssh admin@192.168.0.1 'whoami; echo origem=${SSH_CLIENT%% *}'
+admin
+origem=192.168.1.10
+
+$ ssh admin@192.168.0.1 whoami; echo "codigo de saida: $?"
+ssh: connect to host 192.168.0.1 port 22: Connection timed out
+codigo de saida: 255

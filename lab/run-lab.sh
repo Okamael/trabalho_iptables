@@ -120,6 +120,9 @@ cat "$EV/01-testes.txt"
 { echo "# iptables -S (filter)"; N fw iptables -S; echo; echo "# iptables -t nat -S"; N fw iptables -t nat -S; } > "$EV/03-regras.txt"
 { N fw iptables -L -n -v --line-numbers; echo; N fw iptables -t nat -L -n -v --line-numbers; } > "$EV/04-contadores.txt"
 
+# ---------- Comandos reais (ssh, ping, telnet, curl) com o firewall ativo ----------
+source "$LAB/demo-comandos.sh"
+
 # ---------- Controle: mesmos acessos SEM firewall ----------
 N fw bash -c 'for c in INPUT FORWARD OUTPUT; do iptables -P $c ACCEPT; done; iptables -F; iptables -t nat -F'
 {
